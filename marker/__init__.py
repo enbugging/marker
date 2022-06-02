@@ -1,2 +1,3 @@
-import position_rank, reading_frame
-from text_processing import process
+from .reading_frame import *
+from .position_rank import *
+from .text_processing import *

@@ -1,5 +1,5 @@
 from collections import deque
-from reading_frame import ReadingFrame
+from marker.reading_frame import ReadingFrame
     
 class PositionRank(ReadingFrame):
     def __init__(self, \
@@ -118,12 +118,13 @@ class PositionRank(ReadingFrame):
             for i in range(number_of_distinct_words):
                 sigma = 0
                 for j in range(number_of_distinct_words):
-                    sigma += scores[j] * self.weight[id_to_word[i][0]][id_to_word[j][0]]/total_weights[j]
+                    if self.weight[id_to_word[i][0]][id_to_word[j][0]]:
+                        sigma += scores[j] * self.weight[id_to_word[i][0]][id_to_word[j][0]]/total_weights[j]
                 new_scores[i] = self.alpha * prob[i] + (1 - self.alpha) * sigma
             for i in range(number_of_distinct_words):
                 scores[i] = new_scores[i]
 
-        boldness_score = [] * number_of_words
+        boldness_score = [0] * number_of_words
         for i in range(0, number_of_words):
             boldness_score[i] = \
                 scores[ \

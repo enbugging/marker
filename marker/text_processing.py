@@ -1,9 +1,10 @@
 from nltk.corpus import stopwords
-from position_rank import PositionRank
+from marker.position_rank import PositionRank
 import string
 import re
 
 def model_boldness(len, boldness = 1.0):
+    if len <= 2: return [boldness] * len
     len -= 1
     d = len//2
     result = [(max(i, len - i) - d)/d * boldness for i in range(len+1)]
@@ -18,16 +19,16 @@ def process(raw_text, \
         PositionRank(maximum_number_of_words, \
             token_window_size, \
             alpha)
-
     # Preprocessing text
     preprocess_text = list(enumerate(raw_text.split(' ')))
     # Removing punctuation
     for i in range(len(preprocess_text)):
-        preprocess_text[i][1].translate(None, string.punctuation)
-        preprocess_text[i][1] = preprocess_text[i][1].lower()
+        w = preprocess_text[i][1]
+        w = w.translate(str.maketrans('','',string.punctuation))
+        preprocess_text[i] = (preprocess_text[i][0], w.lower())
     # Removing non-word and fillers
     stop_words = set(stopwords.words('english'))
-    clean_text = [(i, w) for (i, w) in clean_text if w not in stop_words and re.search('[a-zA-Z0-9]', w)]
+    clean_text = [(i, w) for (i, w) in preprocess_text if w not in stop_words and re.search('[a-zA-Z0-9]', w)]
 
     boldness_total_scores = [0] * len(preprocess_text)
     for (position, word) in enumerate(clean_text):
@@ -39,17 +40,15 @@ def process(raw_text, \
     
     # Normalization
     for i in range(len(boldness_total_scores)):
-        boldness_total_scores[i] /= min(maximum_number_of_words, min(i + 1, len(clean_text) - i))
+        boldness_total_scores[i] /= min(maximum_number_of_words, min(i + 1, len(boldness_total_scores) - i))
     normalization = max(boldness_total_scores) * (1 - boldness_baseline)
     for i in range(len(boldness_total_scores)):
         boldness_total_scores[i] = boldness_total_scores[i] / normalization + boldness_baseline
 
     # Calculate boldness for each character
-    final_boldness = [] * len(raw_text)
+    final_boldness = [0] * len(raw_text)
     cnt = 0
-    for (i, w) in range(len(preprocess_text)):
-        for j in range(len(w)):
-            boldness_total_scores[i]
-            final_boldness[cnt:cnt + len(w)] = model_boldness(len(w), boldness_total_scores[i])
-        
+    for (i, w) in preprocess_text:
+        final_boldness[cnt:cnt + len(w)] = model_boldness(len(w), boldness_total_scores[i])
+        cnt += len(w)
     return final_boldness
