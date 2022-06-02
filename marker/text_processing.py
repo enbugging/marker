@@ -48,13 +48,11 @@ def process(raw_text, \
     normalization = max(boldness_total_scores)
     for i in range(len(boldness_total_scores)):
         boldness_total_scores[i] = boldness_total_scores[i] / normalization * (1 - boldness_baseline) + boldness_baseline
-    print(boldness_total_scores)
     # Calculate boldness for each character
     final_boldness = [0] * len(raw_text)
     cnt = 0
     for i in range(len(words_lenghts)):
         length = words_lenghts[i]
         final_boldness[cnt:cnt + length] = model_boldness(length, boldness_total_scores[i])
-        print("It happens", model_boldness(length, boldness_total_scores[i]))
         cnt += length + 1
     return final_boldness
