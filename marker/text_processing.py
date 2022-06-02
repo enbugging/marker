@@ -16,7 +16,7 @@ def process(raw_text, \
             maximum_number_of_words = 40, \
             token_window_size = 7, \
             alpha = 0.15, 
-            boldness_baseline = 0.3):
+            boldness_baseline = 0.2):
     importance_assigner = \
         PositionRank(maximum_number_of_words, \
             token_window_size, \
@@ -47,9 +47,9 @@ def process(raw_text, \
             len(boldness_total_scores) - i \
             if i >= len(boldness_total_scores) - maximum_number_of_words \
             else len(boldness_total_scores)
-        boldness_total_scores[i] /= number_of_scanned_frames
+        boldness_total_scores[i] /= number_of_scanned_frames**0.7
     #for i in range(len(boldness_total_scores)):
-    #    boldness_total_scores[i] = math.log(boldness_total_scores[i] + 1)
+    #    boldness_total_scores[i] = math.log2(boldness_total_scores[i] + 1)
     normalization = max(boldness_total_scores)
     for i in range(len(boldness_total_scores)):
         boldness_total_scores[i] = boldness_total_scores[i] / normalization * (1 - boldness_baseline) + boldness_baseline

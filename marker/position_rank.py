@@ -1,4 +1,3 @@
-from collections import deque
 from marker.reading_frame import ReadingFrame
     
 class PositionRank(ReadingFrame):
@@ -125,16 +124,16 @@ class PositionRank(ReadingFrame):
         sum_prob = sum(prob)
         for i in range(number_of_distinct_words):
             prob[i] /= sum_prob
-        """
+        #"""
         scores = [1.0/number_of_distinct_words] * number_of_distinct_words
-        for _ in range(10):
+        for _ in range(5):
             new_scores = [0] * number_of_distinct_words
             for i in range(number_of_distinct_words):
                 sigma = 0
                 for j in range(number_of_distinct_words):
                     if self.weight[id_to_word[i][0]][id_to_word[j][0]]:
                         sigma += scores[j] * self.weight[id_to_word[i][0]][id_to_word[j][0]]/total_weights[j]
-                # new_scores[i] = self.alpha * prob[i] + (1 - self.alpha) * sigma
+                #new_scores[i] = self.alpha * prob[i] + (1 - self.alpha) * sigma
                 new_scores[i] = self.alpha/number_of_distinct_words + (1 - self.alpha) * sigma
             for i in range(number_of_distinct_words):
                 scores[i] = new_scores[i]
@@ -150,8 +149,8 @@ class PositionRank(ReadingFrame):
                         ] \
                     ]
         if self.isFull():
-            boldness_score = list(
-                deque(boldness_score)
-                .rotate(self.maximum_number_of_words - self.current_position)
-            )
+            rotate = self.maximum_number_of_words - self.current_position
+            boldness_score = boldness_score[-rotate:] + boldness_score[:-rotate]
+            v = self.labels_to_words[-rotate:] + self.labels_to_words[:-rotate]
+            v = ' '.join([w for (_, w) in v])
         return boldness_score
