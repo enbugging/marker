@@ -1,7 +1,7 @@
 from collections import deque
 
 class ReadingFrame:
-    def __init__(self, maximum_number_of_words = 150):
+    def __init__(self, maximum_number_of_words = 40):
         self.maximum_number_of_words    = maximum_number_of_words
         self.current_position                 = 0
         self.words_to_labels            = {}

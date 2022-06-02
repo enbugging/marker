@@ -3,14 +3,21 @@ from marker.reading_frame import ReadingFrame
     
 class PositionRank(ReadingFrame):
     def __init__(self, \
-                maximum_number_of_words = 150, \
+                maximum_number_of_words = 40, \
                 token_window_size = 7, \
                 alpha = 0.15):
         super().__init__(maximum_number_of_words)
         self.token_window_size  = token_window_size
         self.alpha              = alpha
-        self.weight             = [[0] * maximum_number_of_words] * maximum_number_of_words
+        self.weight             = [[0 for i in range(maximum_number_of_words)] for j in range(maximum_number_of_words)]
     
+    def weight_debug(self):
+        for i in range(self.maximum_number_of_words):
+            for j in range(self.maximum_number_of_words):
+                print(self.weight[i][j], end=' ')
+            print()
+        print()
+
     def update_weights(self, label, left_lim, right_lim, change):
         if right_lim <= self.maximum_number_of_words:
             for i in range(left_lim, right_lim):
@@ -27,6 +34,8 @@ class PositionRank(ReadingFrame):
                 temporary_label = self.word_first_label(self.labels_to_words[i])
                 self.weight[label][temporary_label] += change
                 self.weight[temporary_label][label] += change
+        #print(label, left_lim, right_lim, change)
+        #self.weight_debug()
 
     def append(self, word):
         previous_id = self.current_position
@@ -92,6 +101,10 @@ class PositionRank(ReadingFrame):
                             1)
 
     def extract_boldness(self):
+        # Special case where PositionRank does not work: there is only one word
+        if self.number_of_words_scanned == 1:
+            return [1.0]
+
         id_to_word = [(self.word_first_label(w), w) for w in self.words_to_labels.keys()]
         number_of_distinct_words = len(id_to_word)
         word_to_id = {}
@@ -103,7 +116,8 @@ class PositionRank(ReadingFrame):
         for i in range(number_of_distinct_words):
             for j in range(number_of_distinct_words):
                 total_weights[i] += self.weight[id_to_word[i][0]][id_to_word[j][0]]
-        
+        """
+        # Weighted version of TextRank. Recommended by the original paper of PositionRank, but found to be to biased.
         prob = [0] * number_of_distinct_words
         for i in range(number_of_words):
             prob[word_to_id[self.word_first_label(self.labels_to_words[i])]] += 1.0 / (number_of_words - i)
@@ -111,7 +125,7 @@ class PositionRank(ReadingFrame):
         sum_prob = sum(prob)
         for i in range(number_of_distinct_words):
             prob[i] /= sum_prob
-        
+        """
         scores = [1.0/number_of_distinct_words] * number_of_distinct_words
         for _ in range(10):
             new_scores = [0] * number_of_distinct_words
@@ -120,7 +134,8 @@ class PositionRank(ReadingFrame):
                 for j in range(number_of_distinct_words):
                     if self.weight[id_to_word[i][0]][id_to_word[j][0]]:
                         sigma += scores[j] * self.weight[id_to_word[i][0]][id_to_word[j][0]]/total_weights[j]
-                new_scores[i] = self.alpha * prob[i] + (1 - self.alpha) * sigma
+                # new_scores[i] = self.alpha * prob[i] + (1 - self.alpha) * sigma
+                new_scores[i] = self.alpha/number_of_distinct_words + (1 - self.alpha) * sigma
             for i in range(number_of_distinct_words):
                 scores[i] = new_scores[i]
 
