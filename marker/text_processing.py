@@ -6,8 +6,9 @@ import re
 def model_boldness(len, boldness = 1.0):
     if len <= 2: return [boldness] * len
     len -= 1
-    d = len//2
-    result = [(max(i, len - i) - d)/d * boldness for i in range(len+1)]
+    a = len//2
+    b = (len + 1)//2
+    result = [(max(i, len - i) - a)/b * boldness for i in range(len+1)]
     return result
 
 def process(raw_text, \
@@ -41,14 +42,19 @@ def process(raw_text, \
     # Normalization
     for i in range(len(boldness_total_scores)):
         boldness_total_scores[i] /= min(maximum_number_of_words, min(i + 1, len(boldness_total_scores) - i))
-    normalization = max(boldness_total_scores) * (1 - boldness_baseline)
+    normalization = max(boldness_total_scores)
     for i in range(len(boldness_total_scores)):
-        boldness_total_scores[i] = boldness_total_scores[i] / normalization + boldness_baseline
-
+        boldness_total_scores[i] = \
+            boldness_total_scores[i] / normalization *  (1 - boldness_baseline) + \
+            boldness_baseline
     # Calculate boldness for each character
     final_boldness = [0] * len(raw_text)
     cnt = 0
     for (i, w) in preprocess_text:
         final_boldness[cnt:cnt + len(w)] = model_boldness(len(w), boldness_total_scores[i])
-        cnt += len(w)
+        cnt += len(w) + 1
+    for i in range(len(raw_text)):
+        if not (0 <= final_boldness[i] and final_boldness[i] <= 1):
+            print("Final score error:", i, final_boldness[i])
+            assert(False)
     return final_boldness
