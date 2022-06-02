@@ -12,7 +12,7 @@ def model_boldness(len, boldness = 1.0):
     result = [max(i, len - i)/len * boldness for i in range(len+1)]
     return result
 
-def process(raw_text, \
+def highlight(raw_text, \
             maximum_number_of_words = 40, \
             token_window_size = 7, \
             alpha = 0.15, 
@@ -46,8 +46,8 @@ def process(raw_text, \
         number_of_scanned_frames = \
             len(boldness_total_scores) - i \
             if i >= len(boldness_total_scores) - maximum_number_of_words \
-            else len(boldness_total_scores)
-        boldness_total_scores[i] /= number_of_scanned_frames**0.7
+            else maximum_number_of_words
+        boldness_total_scores[i] /= number_of_scanned_frames
     #for i in range(len(boldness_total_scores)):
     #    boldness_total_scores[i] = math.log2(boldness_total_scores[i] + 1)
     normalization = max(boldness_total_scores)
