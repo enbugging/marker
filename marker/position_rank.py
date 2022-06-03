@@ -1,15 +1,17 @@
 from marker.reading_frame import ReadingFrame
-    
+
+
 class PositionRank(ReadingFrame):
-    def __init__(self, \
-                maximum_number_of_words = 40, \
-                token_window_size = 7, \
-                alpha = 0.15):
+    def __init__(self,
+                 maximum_number_of_words=40,
+                 token_window_size=7,
+                 alpha=0.15):
         super().__init__(maximum_number_of_words)
-        self.token_window_size  = token_window_size
-        self.alpha              = alpha
-        self.weight             = [[0 for i in range(maximum_number_of_words)] for j in range(maximum_number_of_words)]
-    
+        self.token_window_size = token_window_size
+        self.alpha = alpha
+        self.weight = [[0 for i in range(maximum_number_of_words)]
+                       for j in range(maximum_number_of_words)]
+
     def weight_debug(self):
         for i in range(self.maximum_number_of_words):
             for j in range(self.maximum_number_of_words):
@@ -20,21 +22,24 @@ class PositionRank(ReadingFrame):
     def update_weights(self, label, left_lim, right_lim, change):
         if right_lim <= self.maximum_number_of_words:
             for i in range(left_lim, right_lim):
-                temporary_label = self.word_first_label(self.labels_to_words[i])
+                temporary_label = self.word_first_label(
+                    self.labels_to_words[i])
                 self.weight[label][temporary_label] += change
                 self.weight[temporary_label][label] += change
         else:
             right_lim -= self.maximum_number_of_words
             for i in range(left_lim, self.maximum_number_of_words):
-                temporary_label = self.word_first_label(self.labels_to_words[i])
+                temporary_label = self.word_first_label(
+                    self.labels_to_words[i])
                 self.weight[label][temporary_label] += change
                 self.weight[temporary_label][label] += change
             for i in range(0, right_lim):
-                temporary_label = self.word_first_label(self.labels_to_words[i])
+                temporary_label = self.word_first_label(
+                    self.labels_to_words[i])
                 self.weight[label][temporary_label] += change
                 self.weight[temporary_label][label] += change
         #print(label, left_lim, right_lim, change)
-        #self.weight_debug()
+        # self.weight_debug()
 
     def append(self, word):
         previous_id = self.current_position
@@ -47,20 +52,20 @@ class PositionRank(ReadingFrame):
             """
             # Pop the old word
             if self.number_of_words_scanned >= 2 * self.maximum_number_of_words:
-                self.update_weights(old_label_word_to_pop, \
-                                    previous_id - self.token_window_size + 1, \
-                                    previous_id, 
+                self.update_weights(old_label_word_to_pop,
+                                    previous_id - self.token_window_size + 1,
+                                    previous_id,
                                     -1)
-                self.update_weights(old_label_word_to_pop, \
-                                    previous_id + 1, \
-                                    previous_id + self.token_window_size, \
+                self.update_weights(old_label_word_to_pop,
+                                    previous_id + 1,
+                                    previous_id + self.token_window_size,
                                     -1)
             else:
-                self.update_weights(old_label_word_to_pop, \
-                                    max(previous_id - self.token_window_size + 1, 0), \
-                                    previous_id, 
+                self.update_weights(old_label_word_to_pop,
+                                    max(previous_id -
+                                        self.token_window_size + 1, 0),
+                                    previous_id,
                                     -1)
-            
 
         old_label_word_to_push = self.word_first_label(word)
         super().append(word)
@@ -73,48 +78,50 @@ class PositionRank(ReadingFrame):
                 for i in range(0, self.maximum_number_of_words):
                     self.weight[new_label_word_to_pop][i] = self.weight[old_label_word_to_pop][i]
                     self.weight[i][new_label_word_to_pop] = self.weight[i][old_label_word_to_pop]
-        
+
         # If the new word has already occurred, we need to transfer adjacency list to the new label, if any
         if old_label_word_to_push != new_label_word_to_push and \
-            old_label_word_to_push is not None:
+                old_label_word_to_push is not None:
             for i in range(0, self.maximum_number_of_words):
                 self.weight[new_label_word_to_push][i] = self.weight[old_label_word_to_push][i]
                 self.weight[i][new_label_word_to_push] = self.weight[i][old_label_word_to_push]
 
-
         # Push the new word
-        
+
         if self.isFull():
-            self.update_weights(new_label_word_to_push, \
-                            previous_id - self.token_window_size + 1, \
-                            previous_id, 
-                            1)
-            self.update_weights(new_label_word_to_push, \
-                                previous_id + 1, \
-                                previous_id + self.token_window_size, \
+            self.update_weights(new_label_word_to_push,
+                                previous_id - self.token_window_size + 1,
+                                previous_id,
+                                1)
+            self.update_weights(new_label_word_to_push,
+                                previous_id + 1,
+                                previous_id + self.token_window_size,
                                 1)
         else:
-            self.update_weights(new_label_word_to_push, \
-                            max(previous_id - self.token_window_size + 1, 0), \
-                            previous_id, 
-                            1)
+            self.update_weights(new_label_word_to_push,
+                                max(previous_id - self.token_window_size + 1, 0),
+                                previous_id,
+                                1)
 
     def extract_boldness(self):
         # Special case where PositionRank does not work: there is only one word
         if self.number_of_words_scanned == 1:
             return [1.0]
 
-        id_to_word = [(self.word_first_label(w), w) for w in self.words_to_labels.keys()]
+        id_to_word = [(self.word_first_label(w), w)
+                      for w in self.words_to_labels.keys()]
         number_of_distinct_words = len(id_to_word)
         word_to_id = {}
         for i in range(number_of_distinct_words):
             word_to_id[id_to_word[i][0]] = i
-        
-        number_of_words = min(self.maximum_number_of_words, self.number_of_words_scanned)
+
+        number_of_words = min(self.maximum_number_of_words,
+                              self.number_of_words_scanned)
         total_weights = [0] * number_of_distinct_words
         for i in range(number_of_distinct_words):
             for j in range(number_of_distinct_words):
-                total_weights[i] += self.weight[id_to_word[i][0]][id_to_word[j][0]]
+                total_weights[i] += self.weight[id_to_word[i]
+                                                [0]][id_to_word[j][0]]
         """
         # Weighted version of TextRank. Recommended by the original paper of PositionRank, but found to be to biased.
         prob = [0] * number_of_distinct_words
@@ -132,25 +139,26 @@ class PositionRank(ReadingFrame):
                 sigma = 0
                 for j in range(number_of_distinct_words):
                     if self.weight[id_to_word[i][0]][id_to_word[j][0]]:
-                        sigma += scores[j] * self.weight[id_to_word[i][0]][id_to_word[j][0]]/total_weights[j]
+                        sigma += scores[j] * self.weight[id_to_word[i]
+                                                         [0]][id_to_word[j][0]]/total_weights[j]
                 #new_scores[i] = self.alpha * prob[i] + (1 - self.alpha) * sigma
-                new_scores[i] = self.alpha/number_of_distinct_words + (1 - self.alpha) * sigma
+                new_scores[i] = self.alpha / \
+                    number_of_distinct_words + (1 - self.alpha) * sigma
             for i in range(number_of_distinct_words):
                 scores[i] = new_scores[i]
 
         boldness_score = [0] * number_of_words
         for i in range(0, number_of_words):
             boldness_score[i] = \
-                scores[ \
-                    word_to_id[ \
-                        self.word_first_label( \
-                            self.labels_to_words[i] \
-                            ) \
-                        ] \
+                scores[
+                    word_to_id[
+                        self.word_first_label(
+                            self.labels_to_words[i]
+                        )
                     ]
+            ]
         if self.isFull():
             rotate = self.maximum_number_of_words - self.current_position
-            boldness_score = boldness_score[-rotate:] + boldness_score[:-rotate]
-            v = self.labels_to_words[-rotate:] + self.labels_to_words[:-rotate]
-            v = ' '.join([w for (_, w) in v])
+            boldness_score = boldness_score[-rotate:] + \
+                boldness_score[:-rotate]
         return boldness_score
