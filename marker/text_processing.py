@@ -1,5 +1,4 @@
-from operator import mod
-from nltk.corpus import stopwords
+from sqlalchemy import false
 from marker.position_rank import PositionRank
 import string
 import re
@@ -16,7 +15,8 @@ def highlight(raw_text, \
             maximum_number_of_words = 40, \
             token_window_size = 7, \
             alpha = 0.15, 
-            boldness_baseline = 0.2):
+            boldness_baseline = 0.2,
+            removeStopWords = false):
     importance_assigner = \
         PositionRank(maximum_number_of_words, \
             token_window_size, \
@@ -30,8 +30,13 @@ def highlight(raw_text, \
         w = w.translate(str.maketrans('','',string.punctuation))
         preprocess_text[i] = (preprocess_text[i][0], w.lower())
     # Removing non-word and fillers
-    stop_words = set(stopwords.words('english'))
-    clean_text = [(i, w) for (i, w) in preprocess_text if w not in stop_words and re.search('[a-zA-Z0-9]', w)]
+    if removeStopWords:
+        # TODO: include other languages. The issue is to reliably predict language and to use the corresponding stop words
+        from nltk.corpus import stopwords
+        stop_words = set(stopwords.words('english'))
+        clean_text = [(i, w) for (i, w) in preprocess_text if re.search('[a-zA-Z0-9]', w) and w not in stop_words]
+    else:
+        clean_text = [(i, w) for (i, w) in preprocess_text if re.search('[a-zA-Z0-9]', w)]# and w not in stop_words]
 
     boldness_total_scores = [0] * len(preprocess_text)
     for (position, word) in enumerate(clean_text):
